@@ -37,28 +37,28 @@ people's reposts are never touched.
 
 **Idle** — the default view. Nothing is running until you press Start.
 
-![Idle state](img/01-idle.png)
+![Idle state](docs/img/01-idle.png)
 
 **Dry run** — finds and previews matches without deleting anything. The whole popup
 shifts to amber and the primary button changes to *Start dry run*.
 
-![Dry run](img/02-dry-run.png)
+![Dry run](docs/img/02-dry-run.png)
 
 **Running** — live wave progress, per-post activity, and a running total.
 
-![Running](img/03-running.png)
+![Running](docs/img/03-running.png)
 
 **Cooldown** — a randomised 3–5 minute pause between waves, with a live countdown.
 
-![Cooldown](img/04-cooldown.png)
+![Cooldown](docs/img/04-cooldown.png)
 
 **Archive mode** — queue every post from your X data export, no scrolling needed.
 
-![Archive mode](img/05-archive.png)
+![Archive mode](docs/img/05-archive.png)
 
 **Replies** — walk your replies tab as well as your main profile.
 
-![Replies mode](img/06-replies.png)
+![Replies mode](docs/img/06-replies.png)
 
 ---
 
