@@ -369,12 +369,6 @@ Or all at once:
 for t in test/*.test.js; do node "$t" || exit 1; done
 ```
 
-Screenshots in this document are generated, not hand-captured:
-
-```bash
-node tools/shoot.js   # writes docs/img/*.png via headless Chrome
-```
-
 ---
 
 ## Files
@@ -390,8 +384,6 @@ src/
   archive.js             archive parser (UI-free, unit tested)
   config.js              shared constants
 test/                    unit tests (no browser needed)
-tools/
-  shoot.js               regenerates docs/img screenshots
 ```
 
 ---
