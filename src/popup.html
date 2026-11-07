@@ -1,0 +1,719 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Xissor</title>
+    <style>
+      :root {
+        --bg: #0b0e13;
+        --surface: #12161d;
+        --surface-2: #171d26;
+        --fg: #eef2f7;
+        --dim: #94a3b6;
+        --dimmer: #6f8095;
+        --border: #212936;
+        --border-hi: #2e3948;
+        --accent: #f4215c;
+        --accent-soft: rgba(244, 33, 92, 0.12);
+        --blue: #1d9bf0;
+        --green: #22c55e;
+        --amber: #f5a524;
+        --radius: 12px;
+        --radius-sm: 9px;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.22);
+        --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { margin: 0; }
+
+      body {
+        width: 372px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---------- scrollbars ---------- */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-hi);
+        border-radius: 99px;
+        border: 2px solid var(--bg);
+      }
+      ::-webkit-scrollbar-thumb:hover { background: #3d4a5c; }
+
+      /* ---------- header ---------- */
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        background: linear-gradient(180deg, #141922, var(--bg));
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      .mark {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 auto;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, var(--accent), #b3184a);
+        box-shadow: 0 2px 10px rgba(244, 33, 92, 0.32);
+      }
+      .mark svg { width: 15px; height: 15px; display: block; }
+
+      h1 {
+        margin: 0;
+        font-size: 13.5px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: var(--dim);
+        font-size: 11px;
+        margin-top: 1px;
+        letter-spacing: -0.005em;
+      }
+      .head-text { min-width: 0; }
+
+      /* ---------- live pill ---------- */
+      .pill {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 9px 4px 8px;
+        border-radius: 99px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--dim);
+        white-space: nowrap;
+        transition: all 0.25s var(--ease);
+      }
+      .pill .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--dimmer);
+        transition: background 0.25s var(--ease);
+      }
+      body.running .pill {
+        color: #6ee7a0;
+        border-color: rgba(34, 197, 94, 0.34);
+        background: rgba(34, 197, 94, 0.1);
+      }
+      body.running .pill .dot {
+        background: var(--green);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+        animation: pulse 1.9s infinite;
+      }
+      @keyframes pulse {
+        0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+        70%  { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      }
+
+      /* ---------- credits ---------- */
+      .credits {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        font-size: 10.5px;
+        color: var(--dimmer);
+        background: #0a0d11;
+        border-bottom: 1px solid var(--border);
+      }
+      .credits-label { letter-spacing: 0.02em; }
+      .credit {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--dim);
+        text-decoration: none;
+        font-weight: 600;
+        padding: 1px 3px;
+        border-radius: 5px;
+        transition: color 0.16s var(--ease), background 0.16s var(--ease);
+      }
+      .credit:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+      .credit:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.5);
+      }
+
+      /* ---------- dry-run banner ---------- */
+      #dryBanner {
+        display: none;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        background: linear-gradient(90deg, rgba(245, 165, 36, 0.16), rgba(245, 165, 36, 0.05));
+        border-bottom: 1px solid rgba(245, 165, 36, 0.28);
+        color: #ffc65c;
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: 0.01em;
+      }
+      body.dry #dryBanner { display: flex; }
+
+      /* ---------- sections ---------- */
+      section {
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      section:last-of-type { border-bottom: 0; }
+
+      .sec-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 9px;
+      }
+      .sec-title {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--dimmer);
+      }
+
+      /* ---------- stats ---------- */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 7px;
+      }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 6px;
+        text-align: center;
+        transition: border-color 0.2s var(--ease);
+      }
+      .stat .k {
+        display: block;
+        font-size: 9.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--dimmer);
+        margin-bottom: 2px;
+      }
+      .stat .v {
+        display: block;
+        font-size: 15px;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+      }
+      .stat.hero {
+        background: linear-gradient(180deg, var(--accent-soft), transparent);
+        border-color: rgba(244, 33, 92, 0.3);
+      }
+      .stat.hero .v { color: #ff6d92; }
+
+      .meta {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        margin-top: 9px;
+        font-size: 11px;
+        color: var(--dim);
+      }
+      .meta b { color: var(--fg); font-weight: 600; }
+      .meta .sep {
+        width: 1px;
+        height: 10px;
+        background: var(--border-hi);
+      }
+      #st-note {
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--amber);
+        min-height: 0;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+      #st-note:empty { display: none; }
+
+
+      /* ---------- form ---------- */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .field { display: block; min-width: 0; }
+      .field > .lab {
+        display: block;
+        font-size: 10.5px;
+        color: var(--dim);
+        margin-bottom: 4px;
+        font-weight: 500;
+        letter-spacing: -0.005em;
+      }
+
+      input[type="number"],
+      input[type="text"],
+      select {
+        width: 100%;
+        background: var(--surface);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 7px 9px;
+        font: inherit;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        transition: border-color 0.16s var(--ease), background 0.16s var(--ease),
+          box-shadow 0.16s var(--ease);
+        outline: none;
+      }
+      input:hover, select:hover { border-color: var(--border-hi); }
+      input:focus, select:focus {
+        border-color: var(--blue);
+        background: #141a23;
+        box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.15);
+      }
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238695a8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 9px center;
+        padding-right: 26px;
+        cursor: pointer;
+      }
+      input[type="number"]::-webkit-inner-spin-button {
+        opacity: 0;
+        transition: opacity 0.16s var(--ease);
+      }
+      input[type="number"]:hover::-webkit-inner-spin-button { opacity: 0.4; }
+
+      /* ---------- switches ---------- */
+      .toggles { display: grid; gap: 2px; margin-top: 10px; }
+      .switch {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 8px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--fg);
+        transition: background 0.16s var(--ease);
+      }
+      .switch:hover { background: var(--surface); }
+      .switch input { position: absolute; opacity: 0; pointer-events: none; }
+      .switch .track {
+        flex: 0 0 auto;
+        width: 30px;
+        height: 17px;
+        border-radius: 99px;
+        background: var(--border-hi);
+        border: 1px solid transparent;
+        position: relative;
+        transition: background 0.2s var(--ease);
+      }
+      .switch .track::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #c3cedb;
+        transition: transform 0.2s var(--ease), background 0.2s var(--ease);
+      }
+      .switch input:checked + .track { background: var(--blue); }
+      .switch input:checked + .track::after {
+        transform: translateX(13px);
+        background: #fff;
+      }
+      .switch input:focus-visible + .track {
+        box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.2);
+      }
+      .switch .txt { display: flex; flex-direction: column; gap: 1px; }
+      .switch .txt small {
+        color: var(--dimmer);
+        font-size: 10.5px;
+        line-height: 1.35;
+      }
+      body.dry .switch input:checked + .track { background: var(--amber); }
+
+      /* ---------- buttons ---------- */
+      .actions {
+        display: flex;
+        gap: 7px;
+        margin-top: 11px;
+      }
+      button {
+        flex: 1;
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-hi);
+        background: var(--surface-2);
+        color: var(--fg);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 8px 10px;
+        transition: transform 0.12s var(--ease), background 0.16s var(--ease),
+          border-color 0.16s var(--ease), color 0.16s var(--ease);
+        white-space: nowrap;
+      }
+      button:hover { background: #1d2430; border-color: #3b4759; }
+      button:active { transform: scale(0.975); }
+      button:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.28);
+      }
+
+      button.start {
+        flex: 1.5;
+        background: linear-gradient(180deg, #f83a6d, #e01a52);
+        border-color: #ff4d7d;
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(224, 26, 82, 0.28);
+      }
+      button.start:hover {
+        background: linear-gradient(180deg, #ff4a79, #ea2459);
+        border-color: #ff628c;
+      }
+      body.dry button.start {
+        background: linear-gradient(180deg, #ffb43f, #e09412);
+        border-color: #ffc45f;
+        color: #241703;
+        box-shadow: 0 2px 10px rgba(224, 148, 18, 0.26);
+      }
+      button.stop {
+        flex: 0 0 auto;
+        background: transparent;
+        border-color: rgba(244, 33, 92, 0.4);
+        color: #ff7fa0;
+      }
+      button.stop:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+      #copyList { flex: 0 0 auto; }
+      #saved {
+        align-self: center;
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity 0.2s var(--ease);
+        white-space: nowrap;
+      }
+      #saved.show { opacity: 1; }
+
+      /* ---------- archive ---------- */
+      #archiveBox { display: none; }
+      body.archive #archiveBox { display: block; }
+
+      .fileRow { display: flex; gap: 7px; align-items: stretch; }
+      .fileRow input[type="file"] {
+        flex: 1;
+        min-width: 0;
+        font: inherit;
+        font-size: 10.5px;
+        color: var(--dim);
+        background: var(--surface);
+        border: 1px dashed var(--border-hi);
+        border-radius: var(--radius-sm);
+        padding: 6px;
+        transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+      }
+      .fileRow input[type="file"]:hover {
+        border-color: #43526a;
+        background: #141a23;
+      }
+      .fileRow input[type="file"]::file-selector-button {
+        background: var(--surface-2);
+        border: 1px solid var(--border-hi);
+        border-radius: 6px;
+        color: var(--fg);
+        font: inherit;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 4px 8px;
+        margin-right: 8px;
+        cursor: pointer;
+        transition: background 0.16s var(--ease);
+      }
+      .fileRow input[type="file"]::file-selector-button:hover { background: #1d2430; }
+      .fileRow button { flex: 0 0 auto; padding: 6px 14px; }
+
+      #archiveInfo {
+        font-size: 11px;
+        color: var(--dim);
+        margin-top: 7px;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+      #archiveInfo:empty { display: none; }
+      #archiveInfo b { color: var(--fg); }
+
+      .warnbox {
+        display: flex;
+        gap: 8px;
+        background: rgba(245, 165, 36, 0.07);
+        border: 1px solid rgba(245, 165, 36, 0.22);
+        color: #e8c288;
+        font-size: 10.5px;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        margin-top: 9px;
+        line-height: 1.5;
+      }
+      .warnbox svg { flex: 0 0 auto; width: 13px; height: 13px; margin-top: 1px; opacity: 0.85; }
+      .warnbox b { color: #ffd79a; }
+      code {
+        font: 10.5px ui-monospace, SFMono-Regular, Consolas, monospace;
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 4px;
+        padding: 1px 4px;
+        color: #dbe6f2;
+      }
+
+      /* ---------- log ---------- */
+      #log {
+        max-height: 124px;
+        overflow-y: auto;
+        font: 10.5px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+        color: #a9bacd;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        padding: 9px 10px;
+        background: #0a0d11;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      #log:empty::before {
+        content: "Waiting for activity…";
+        color: var(--dimmer);
+        font-style: italic;
+      }
+      .log-warn { color: #ffcf7a; }
+      .log-error { color: #ff8fa8; }
+
+      #clearLog {
+        flex: 0 0 auto;
+        padding: 3px 9px;
+        font-size: 10.5px;
+        border-radius: 7px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--dim);
+      }
+      #clearLog:hover { color: var(--fg); border-color: var(--border-hi); }
+
+      /* ---------- footer ---------- */
+      footer {
+        padding: 10px 16px 13px;
+        color: var(--dimmer);
+        font-size: 10.5px;
+        line-height: 1.55;
+        border-top: 1px solid var(--border);
+        background: #0a0d11;
+      }
+      footer strong { color: #b8c4d2; font-weight: 600; }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { animation: none !important; transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7h16" /><path d="M9 7V5h6v2" />
+          <path d="M6 7l1 12h10l1-12" /><path d="M10 11v4M14 11v4" />
+        </svg>
+      </div>
+      <div class="head-text">
+        <h1>Xissor</h1>
+        <div class="sub">X's post mass-removal</div>
+      </div>
+      <span class="pill" id="statePill"><span class="dot"></span><span id="st-running">idle</span></span>
+    </header>
+
+    <div class="credits">
+      <span class="credits-label">by</span>
+      <a class="credit" id="creditGithub" href="https://github.com/9yam" target="_blank" rel="noreferrer">
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        9yam
+      </a>
+    </div>
+
+    <div id="dryBanner">
+      <span>Dry run — no posts will be deleted</span>
+    </div>
+
+    <section>
+      <div class="stats">
+        <div class="stat hero">
+          <span class="k" id="st-total-label">deleted</span>
+          <span class="v" id="st-total">0</span>
+        </div>
+        <div class="stat">
+          <span class="k">wave</span>
+          <span class="v" id="st-wave">—</span>
+        </div>
+        <div class="stat">
+          <span class="k">skipped</span>
+          <span class="v" id="st-failed">0</span>
+        </div>
+        <div class="stat">
+          <span class="k">queued</span>
+          <span class="v" id="st-queue">0</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span>source <b id="st-source">timeline</b></span>
+      </div>
+      <div id="st-note"></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><span class="sec-title">Run</span></div>
+      <div class="grid">
+        <label class="field">
+          <span class="lab">Posts per wave (min)</span>
+          <input id="batchMin" type="number" min="1" max="500" value="50" />
+        </label>
+        <label class="field">
+          <span class="lab">Posts per wave (max)</span>
+          <input id="batchMax" type="number" min="1" max="500" value="70" />
+        </label>
+        <label class="field">
+          <span class="lab">Cooldown min (minutes)</span>
+          <input id="cooldownMinMin" type="number" min="1" max="120" step="0.5" value="3" />
+        </label>
+        <label class="field">
+          <span class="lab">Cooldown max (minutes)</span>
+          <input id="cooldownMaxMin" type="number" min="1" max="120" step="0.5" value="5" />
+        </label>
+        <label class="field">
+          <span class="lab">Delay per post (ms min)</span>
+          <input id="stepMinMs" type="number" min="500" max="120000" step="100" value="2500" />
+        </label>
+        <label class="field">
+          <span class="lab">Delay per post (ms max)</span>
+          <input id="stepMaxMs" type="number" min="500" max="120000" step="100" value="6000" />
+        </label>
+        <label class="field">
+          <span class="lab">Which posts</span>
+          <select id="mode">
+            <option value="posts">Posts only</option>
+            <option value="replies">Replies only</option>
+            <option value="both">Posts + replies</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="lab">Engine</span>
+          <select id="engine">
+            <option value="dom">DOM (safe, slower)</option>
+            <option value="graphql">GraphQL (fast, may break)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="lab">Total cap (0 = none)</span>
+          <input id="maxTotal" type="number" min="0" max="100000" value="0" />
+        </label>
+        <label class="field">
+          <span class="lab">Source</span>
+          <select id="source">
+            <option value="timeline">Timeline (scroll)</option>
+            <option value="archive">X archive file</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="toggles">
+        <label class="switch">
+          <input id="dryRun" type="checkbox" />
+          <span class="track"></span>
+          <span class="txt">
+            Dry run
+            <small>Previews matches without deleting</small>
+          </span>
+        </label>
+        <label class="switch">
+          <input id="includeReposts" type="checkbox" />
+          <span class="track"></span>
+          <span class="txt">
+            Include reposts
+            <small>Un-reposts instead of deleting</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="start" class="start">Start</button>
+        <button id="stop" class="stop">Stop</button>
+        <button id="save">Save</button>
+        <button id="copyList" style="display: none">Copy</button>
+        <span id="saved"></span>
+      </div>
+    </section>
+
+    <section id="archiveBox">
+      <div class="sec-head"><span class="sec-title">Archive</span></div>
+      <div class="fileRow">
+        <input id="archiveFile" type="file" accept=".js,.json" multiple />
+        <button id="loadArchive">Load</button>
+      </div>
+      <div id="archiveInfo"></div>
+      <div class="warnbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 9v4" /><path d="M12 17h.01" />
+          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+        </svg>
+        <span>
+          Archive mode forces the <b>GraphQL</b> engine — those posts aren't on
+          screen to click. If it fails, delete one post manually with DevTools
+          open and paste the <code>queryId</code> from the
+          <code>DeleteTweet</code> request.
+        </span>
+      </div>
+      <label class="field" style="margin-top: 9px">
+        <span class="lab">DeleteTweet queryId (optional override)</span>
+        <input id="deleteQueryId" type="text" placeholder="e.g. VaenaVgh5q5ih7kvyVjgtg" />
+      </label>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-title">Activity</span>
+        <button id="clearLog">Clear</button>
+      </div>
+      <pre id="log"></pre>
+    </section>
+
+    <footer>
+      Scrolling drives discovery — keep your profile tab open and visible.
+      Deletion is <strong>permanent</strong>; download your X archive first.
+    </footer>
+
+    <script src="archive.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

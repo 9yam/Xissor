@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Xissor",
+  "version": "1.0.0",
+  "description": "X's post mass-removal.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Xissor",
+    "default_popup": "src/popup.html"
+  }
+}
